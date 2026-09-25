@@ -1,0 +1,49 @@
+import aiohttp
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+
+
+BOT_TOKEN = "8657690020:AAFzzXQIpsGOeUHmXIYA1A39GeN7-gN67B4"
+
+
+OMDB_KEY = "b752cf61"
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Machan Movie name ekak ewanna! Eg: Pushpa")
+
+async def search_movie(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    movie = update.message.text
+    
+    url = f"http://1tamilmv.meme?apikey={OMDB_KEY}&t={movie}"
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                data = await response.json()
+                
+        
+        if data.get('Response') == 'True':
+            text = (
+                f"🎬 *{data.get('Title')}* ({data.get('Year')})\n"
+                f"⭐ IMDB Rating: {data.get('imdbRating')}/10\n"
+                f"🎭 Genre: {data.get('Genre')}\n"
+                f"📅 Release: {data.get('Released')}\n\n"
+                f"📝 Plot:\n{data.get('Plot')}"
+            )
+            await update.message.reply_text(text, parse_mode='Markdown')
+        else:
+            await update.message.reply_text("Movie eka hoyaganna bari una bro 😔")
+            
+    except Exception as e:
+        await update.message.reply_text("try again ")
+        print(f"Error: {e}")
+
+if __name__ == '__main__':
+    print("Bot is starting...")
+    app = Application.builder().token(BOT_TOKEN).build()
+    
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search_movie))
+    
+    print("Bot is running! Press Ctrl+C to stop.")
+    app.run_polling()
